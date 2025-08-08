@@ -77,11 +77,6 @@ export function LoginForm({
     });
   };
 
-  const handleSubmitForm = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    form.handleSubmit(onSubmit)();
-  };
-
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -91,7 +86,7 @@ export function LoginForm({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={handleSubmitForm} className="space-y-8">
+            <form className="space-y-8">
               <div className="grid gap-6">
                 <div className="flex flex-col gap-4">
                   <Button
@@ -157,7 +152,12 @@ export function LoginForm({
                       )}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => form.handleSubmit(onSubmit)()}
+                    disabled={isLoading}
+                  >
                     {isLoading ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
