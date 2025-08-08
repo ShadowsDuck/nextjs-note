@@ -23,6 +23,14 @@ export interface ResetPasswordEmailProps extends EmailTemplateProps {
   requestTime: string;
 }
 
+// Interface สำหรับ nodemailer error
+interface NodemailerError extends Error {
+  code?: string;
+  command?: string;
+  response?: string;
+  responseCode?: number;
+}
+
 // สร้าง email transporter
 export const createEmailTransporter = (config?: EmailConfig): Transporter => {
   const emailConfig = config || {
@@ -239,28 +247,17 @@ export const sendEmail = async (
 
     return result.messageId;
   } catch (error: unknown) {
+    const nodemailerError = error as NodemailerError;
+
     console.error("❌ Email sending failed:", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      code:
-        error instanceof Error && "code" in error
-          ? (error as any).code
-          : undefined,
-      command:
-        error instanceof Error && "command" in error
-          ? (error as any).command
-          : undefined,
-      response:
-        error instanceof Error && "response" in error
-          ? (error as any).response
-          : undefined,
+      error: nodemailerError.message,
+      code: nodemailerError.code,
+      command: nodemailerError.command,
+      response: nodemailerError.response,
     });
 
     // ให้ข้อมูลเพิ่มเติมสำหรับ debug
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      (error as any).code === "EAUTH"
-    ) {
+    if (nodemailerError.code === "EAUTH") {
       console.error("Authentication failed. Please check:");
       console.error("1. Email address is correct");
       console.error("2. App Password is correct (16 characters)");
