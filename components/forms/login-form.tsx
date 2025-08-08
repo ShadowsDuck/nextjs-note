@@ -59,6 +59,7 @@ export function LoginForm({
 
       if (res.success) {
         toast.success(res.message);
+        router.refresh();
         router.push("/dashboard");
       } else {
         toast.error(res.message);
@@ -86,7 +87,7 @@ export function LoginForm({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid gap-6">
                 <div className="flex flex-col gap-4">
                   <Button
@@ -152,12 +153,7 @@ export function LoginForm({
                       )}
                     />
                   </div>
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={() => form.handleSubmit(onSubmit)()}
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
