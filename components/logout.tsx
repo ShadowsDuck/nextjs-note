@@ -25,8 +25,8 @@ export function Logout() {
 
   return (
     <Button
+      variant="outline"
       type="submit"
-      className="w-24"
       onClick={handleLogout}
       disabled={isLoading}
     >
