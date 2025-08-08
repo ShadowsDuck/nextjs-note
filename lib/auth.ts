@@ -3,24 +3,33 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import { schema } from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
-import { Resend } from "resend";
-import VerificationEmail from "@/components/emails/verification-email";
-import PasswordResetEmail from "@/components/emails/reset-email";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import emailjs from "@emailjs/nodejs";
 
 export const auth = betterAuth({
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      await resend.emails.send({
-        from: "no-reply@mail.nextjs-note-olive.vercel.app",
-        to: [user.email],
-        subject: "Verify your email address",
-        react: VerificationEmail({
-          userName: user.name,
-          verificationUrl: url,
-        }),
-      });
+      try {
+        await emailjs.send(
+          process.env.EMAILJS_SERVICE_ID!,
+          process.env.EMAILJS_VERIFICATION_TEMPLATE_ID!,
+          {
+            to_email: user.email,
+            to_name: user.name || "User",
+            user_name: user.name || "User",
+            verification_url: url,
+            company_name: "NS Note",
+            current_year: new Date().getFullYear().toString(),
+          },
+          {
+            publicKey: process.env.EMAILJS_PUBLIC_KEY!,
+            privateKey: process.env.EMAILJS_PRIVATE_KEY!,
+          }
+        );
+        console.log("Verification email sent successfully via EmailJS");
+      } catch (error) {
+        console.error("Error sending verification email:", error);
+        throw error;
+      }
     },
     sendOnSignUp: true,
   },
@@ -29,16 +38,39 @@ export const auth = betterAuth({
     autoSignIn: false,
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      await resend.emails.send({
-        from: "no-reply@mail.nextjs-note-olive.vercel.app",
-        to: [user.email],
-        subject: "Reset your password",
-        react: PasswordResetEmail({
-          userName: user.name,
-          resetUrl: url,
-          requestTime: new Date().toISOString(),
-        }),
-      });
+      try {
+        const requestTime = new Date().toLocaleString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZoneName: "short",
+        });
+
+        await emailjs.send(
+          process.env.EMAILJS_SERVICE_ID!,
+          process.env.EMAILJS_RESET_TEMPLATE_ID!,
+          {
+            to_email: user.email,
+            to_name: user.name || "User",
+            user_name: user.name || "User",
+            reset_url: url,
+            request_time: requestTime,
+            company_name: "NS Note",
+            current_year: new Date().getFullYear().toString(),
+          },
+          {
+            publicKey: process.env.EMAILJS_PUBLIC_KEY!,
+            privateKey: process.env.EMAILJS_PRIVATE_KEY!,
+          }
+        );
+        console.log("Password reset email sent successfully via EmailJS");
+      } catch (error) {
+        console.error("Error sending password reset email:", error);
+        throw error;
+      }
     },
   },
   socialProviders: {
