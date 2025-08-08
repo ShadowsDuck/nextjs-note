@@ -40,6 +40,7 @@ export function ForgotPasswordForm({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       email: "",
     },
@@ -66,6 +67,11 @@ export function ForgotPasswordForm({
     }
   }
 
+  const handleSubmitForm = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit(onSubmit)();
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -77,7 +83,7 @@ export function ForgotPasswordForm({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={handleSubmitForm} className="space-y-8">
               <div className="grid gap-6">
                 <div className="grid gap-6">
                   <div className="grid gap-3">
