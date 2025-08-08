@@ -27,7 +27,7 @@ import Link from "next/link";
 import { signIn } from "@/lib/actions/users";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
@@ -59,7 +59,7 @@ export function LoginForm({
 
       if (res.success) {
         toast.success(res.message);
-        router.replace("/dashboard");
+        router.push("/dashboard");
       } else {
         toast.error(res.message);
       }
