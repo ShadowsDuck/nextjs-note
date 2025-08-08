@@ -31,12 +31,30 @@ export const createEmailTransporter = (config?: EmailConfig): Transporter => {
     fromName: process.env.EMAIL_FROM_NAME!,
   };
 
+  // Debug log (ลบออกเมื่อใช้งานจริง)
+  console.log("Creating transporter with:", {
+    user: emailConfig.user,
+    passwordLength: emailConfig.password?.length,
+    fromName: emailConfig.fromName,
+  });
+
+  // ใช้การตั้งค่าแบบละเอียด แทน service: "gmail"
   return nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true for 465, false for other ports
     auth: {
       user: emailConfig.user,
       pass: emailConfig.password,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    // เพิ่มตัวเลือกเหล่านี้เพื่อแก้ปัญหา connection
+    pool: true,
+    maxConnections: 1,
+    rateDelta: 20000,
+    rateLimit: 5,
   });
 };
 
@@ -203,16 +221,40 @@ export const createResetPasswordEmailTemplate = ({
   `;
 };
 
-// ฟังก์ชันสำหรับส่งอีเมล
+// ฟังก์ชันสำหรับส่งอีเมล - เพิ่ม error handling และ retry logic
 export const sendEmail = async (
   transporter: Transporter,
   mailOptions: SendMailOptions
 ): Promise<string> => {
   try {
+    // ทดสอบ connection ก่อนส่ง
+    console.log("Testing SMTP connection...");
+    await transporter.verify();
+    console.log("✅ SMTP connection verified");
+
+    // ส่งอีเมล
+    console.log("Sending email to:", mailOptions.to);
     const result = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent successfully:", result.messageId);
+
     return result.messageId;
-  } catch (error) {
-    console.error("Error sending email:", error);
+  } catch (error: any) {
+    console.error("❌ Email sending failed:", {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+    });
+
+    // ให้ข้อมูลเพิ่มเติมสำหรับ debug
+    if (error.code === "EAUTH") {
+      console.error("Authentication failed. Please check:");
+      console.error("1. Email address is correct");
+      console.error("2. App Password is correct (16 characters)");
+      console.error("3. 2-Factor Authentication is enabled");
+      console.error("4. App Password is not expired");
+    }
+
     throw error;
   }
 };
