@@ -3,31 +3,37 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import { schema } from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
-import emailjs from "@emailjs/nodejs";
+import {
+  createEmailTransporter,
+  createVerificationEmailTemplate,
+  createResetPasswordEmailTemplate,
+  sendEmail,
+} from "@/lib/email";
 
 export const auth = betterAuth({
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
       try {
-        await emailjs.send(
-          process.env.EMAILJS_SERVICE_ID!,
-          process.env.EMAILJS_VERIFICATION_TEMPLATE_ID!,
-          {
-            to_email: user.email,
-            to_name: user.name || "User",
-            user_name: user.name || "User",
-            verification_url: url,
-            company_name: "NS Note",
-            current_year: new Date().getFullYear().toString(),
-          },
-          {
-            publicKey: process.env.EMAILJS_PUBLIC_KEY!,
-            privateKey: process.env.EMAILJS_PRIVATE_KEY!,
-          }
-        );
-        console.log("Verification email sent successfully via EmailJS");
+        const transporter = createEmailTransporter();
+
+        const htmlContent = createVerificationEmailTemplate({
+          userName: user.name || "User",
+          verificationUrl: url,
+          companyName: "NS Note",
+          currentYear: new Date().getFullYear().toString(),
+        });
+
+        const mailOptions = {
+          from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject: "ยืนยันอีเมลของคุณ - NS Note",
+          html: htmlContent,
+        };
+
+        const messageId = await sendEmail(transporter, mailOptions);
+        console.log("✅ Verification email sent successfully:", messageId);
       } catch (error) {
-        console.error("Error sending verification email:", error);
+        console.error("❌ Error sending verification email:", error);
         throw error;
       }
     },
@@ -39,7 +45,9 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       try {
-        const requestTime = new Date().toLocaleString("en-US", {
+        const transporter = createEmailTransporter();
+
+        const requestTime = new Date().toLocaleString("th-TH", {
           weekday: "long",
           year: "numeric",
           month: "long",
@@ -49,26 +57,25 @@ export const auth = betterAuth({
           timeZoneName: "short",
         });
 
-        await emailjs.send(
-          process.env.EMAILJS_SERVICE_ID!,
-          process.env.EMAILJS_RESET_TEMPLATE_ID!,
-          {
-            to_email: user.email,
-            to_name: user.name || "User",
-            user_name: user.name || "User",
-            reset_url: url,
-            request_time: requestTime,
-            company_name: "NS Note",
-            current_year: new Date().getFullYear().toString(),
-          },
-          {
-            publicKey: process.env.EMAILJS_PUBLIC_KEY!,
-            privateKey: process.env.EMAILJS_PRIVATE_KEY!,
-          }
-        );
-        console.log("Password reset email sent successfully via EmailJS");
+        const htmlContent = createResetPasswordEmailTemplate({
+          userName: user.name || "User",
+          resetUrl: url,
+          requestTime: requestTime,
+          companyName: "NS Note",
+          currentYear: new Date().getFullYear().toString(),
+        });
+
+        const mailOptions = {
+          from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject: "รีเซ็ตรหัสผ่าน - NS Note",
+          html: htmlContent,
+        };
+
+        const messageId = await sendEmail(transporter, mailOptions);
+        console.log("✅ Password reset email sent successfully:", messageId);
       } catch (error) {
-        console.error("Error sending password reset email:", error);
+        console.error("❌ Error sending password reset email:", error);
         throw error;
       }
     },
