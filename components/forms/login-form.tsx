@@ -59,8 +59,7 @@ export function LoginForm({
 
       if (res.success) {
         toast.success(res.message);
-        router.refresh();
-        router.push("/dashboard");
+        router.replace("/dashboard");
       } else {
         toast.error(res.message);
       }
