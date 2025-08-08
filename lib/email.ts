@@ -238,16 +238,29 @@ export const sendEmail = async (
     console.log("✅ Email sent successfully:", result.messageId);
 
     return result.messageId;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Email sending failed:", {
-      error: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response,
+      error: error instanceof Error ? error.message : "Unknown error",
+      code:
+        error instanceof Error && "code" in error
+          ? (error as any).code
+          : undefined,
+      command:
+        error instanceof Error && "command" in error
+          ? (error as any).command
+          : undefined,
+      response:
+        error instanceof Error && "response" in error
+          ? (error as any).response
+          : undefined,
     });
 
     // ให้ข้อมูลเพิ่มเติมสำหรับ debug
-    if (error.code === "EAUTH") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as any).code === "EAUTH"
+    ) {
       console.error("Authentication failed. Please check:");
       console.error("1. Email address is correct");
       console.error("2. App Password is correct (16 characters)");
